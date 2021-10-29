@@ -1,2 +1,2 @@
-heroku ps:scale web=1
-web: python app.py
+web: gunicorn app:server
+# gunicorn -b 0.0.0.0:8050 index:app.server
