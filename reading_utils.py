@@ -11,6 +11,10 @@ import os
 # Load your credentials
 # load_dotenv(find_dotenv())
 
+from cherrypy.process import servers
+def fake_wait_for_occupied_port(host, port):
+    return servers.wait_for_occupied_port=fake_wait_for_occupied_port
+
 CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
 
