@@ -11,9 +11,9 @@ import os
 # Load your credentials
 # load_dotenv(find_dotenv())
 
-# import cherrypy
-# cherrypy.config.update({'server.socket_host': '0.0.0.0',})
-# cherrypy.config.update({'server.socket_port': int(os.environ.get('PORT', '5000')),})
+import cherrypy
+cherrypy.config.update({'server.socket_host': '0.0.0.0',})
+cherrypy.config.update({'server.socket_port': int(os.environ.get('PORT', '5000')),})
 
 CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
