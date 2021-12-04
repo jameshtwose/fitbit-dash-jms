@@ -11,6 +11,13 @@ from base64 import b64encode
 from fitbit.api import Fitbit
 from oauthlib.oauth2.rfc6749.errors import MismatchingStateError, MissingTokenError
 
+from cherrypy.process import servers
+
+
+def fake_wait_for_occupied_port(host, port):
+    return
+
+servers.wait_for_occupied_port = fake_wait_for_occupied_port
 
 class OAuth2Server:
     def __init__(self, client_id, client_secret,
