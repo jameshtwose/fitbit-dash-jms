@@ -21,7 +21,7 @@ servers.wait_for_occupied_port = fake_wait_for_occupied_port
 
 class OAuth2Server:
     def __init__(self, client_id, client_secret,
-                 redirect_uri='http://127.0.0.1:8080/'):
+                 redirect_uri='http://127.0.0.1:8050/'):
         """ Initialize the FitbitOauth2Client """
         self.success_html = """
             <h1>You are now authorized to access the Fitbit API!</h1>
