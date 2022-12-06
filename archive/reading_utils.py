@@ -4,12 +4,12 @@ import fitbit
 import pandas as pd
 import datetime
 import os
-from dotenv import load_dotenv, find_dotenv
+# from dotenv import load_dotenv, find_dotenv
 # import matplotlib.pyplot as plt
 # import seaborn as sns
 
 # Load your credentials
-load_dotenv(find_dotenv())
+# load_dotenv(find_dotenv())
 
 CLIENT_ID = os.getenv("CLIENT_ID")
 CLIENT_SECRET = os.getenv("CLIENT_SECRET")
