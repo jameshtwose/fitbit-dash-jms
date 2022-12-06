@@ -1,0 +1,58 @@
+@import url(https://fonts.googleapis.com/css?family=Raleway:500);
+body {
+  margin-left: 20px;
+  padding: 20px;
+  font-family: 'Raleway', sans-serif;
+  background: #dadadaa4;
+  --link_color: #ac863e;
+  --header_color: #5f4a89;
+  --overview_color: #241444b0;
+  --bullet_line_color: #242424;
+}
+.detail {
+  margin: 0;
+  margin-top: 50px;
+  padding: 40px;
+  padding-left: 50px;
+  color: rgb(238, 237, 237);
+  border: solid var(--bullet_line_color) 3px;
+  background-color: var(--overview_color);
+}
+.fitbit-btn {
+  width: 184px;
+  height: 42px;
+  background-color: var(--header_color);
+  border-radius: 2px;
+  box-shadow: 0 3px 4px 0 rgba(0, 0, 0, 0.25);
+  display: block;
+}
+.fitbit-btn .fitbit-icon-wrapper {
+  position: absolute;
+  margin-top: 1px;
+  margin-left: 1px;
+  width: 40px;
+  height: 40px;
+  border-radius: 2px;
+  background-color: #fff;
+}
+.fitbit-btn .fitbit-icon {
+  position: absolute;
+  margin-top: 11px;
+  margin-left: 11px;
+  width: 18px;
+  height: 18px;
+}
+.fitbit-btn .btn-text {
+  float: right;
+  margin: 11px 11px 0 0;
+  color: #fff;
+  font-size: 14px;
+  letter-spacing: 0.2px;
+  font-family: "Roboto";
+}
+.fitbit-btn:hover {
+  box-shadow: 0 0 6px var(--header_color);
+}
+.fitbit-btn:active {
+  background: var(--link_color);
+}
