@@ -1,107 +1,68 @@
-from jmspack.utils import apply_scaling, JmsColors
+from server import app, server
+from dash import Dash, dcc, html, Input, Output, State
+import dash_bootstrap_components as dbc
+from sidebar import sidebar, content, activity_df, sleep_df
+
+from utils import parse_time_plots, parse_descriptives, get_data, parse_correlation
 import pandas as pd
-import dash
-from dash import dcc, html
-from dash.dependencies import Input, Output
-import plotly.graph_objects as go
-import plotly.express as px
 
-from utils import get_data
+app.layout = html.Div([dcc.Location(id="url"), sidebar, content])
 
-external_stylesheets = ["https://codepen.io/chriddyp/pen/bWLwgP.css"]
 
-app = dash.Dash(__name__, external_stylesheets=external_stylesheets)
+def update_descriptives():
+    activity_best_df = get_data(data_type="activity_best")
+    best_info = parse_descriptives(
+        data=activity_best_df, title="The highest activity data and the dates they occurred"
+    )
+    activity_total_df = get_data(data_type="activity_total")
+    total_info = parse_descriptives(
+        data=activity_total_df, title="The total activity data"
+    )
 
-server = app.server
-
-db_list = ["activity_daily", "sleep_daily"][:-1]
-
-df = get_data(data_type=db_list[0])
-
-features_list = df.select_dtypes("number").columns.tolist()
-
-app.layout = html.Div(
-    [
-        html.H1(
-            id="H1",
-            children="FitBit Numbers",
-            style={"textAlign": "center", "marginTop": 40, "marginBottom": 40},
-        ),
-        html.Div(
-            [
-                dcc.Dropdown(
-                    id="db_choice",
-                    options=[
-                        {"label": i.title().replace("_", " "), "value": i} for i in db_list
-                    ],
-                    value=db_list[0],
-                )
-            ],
-            style={"width": "20%", "display": "inline-block", "padding": "5px"},
-        ),
-        html.Div(
-            [
-                dcc.Dropdown(
-                    id="feature_choice",
-                    options=[
-                        {"label": i.title().replace("_", " "), "value": i} for i in features_list
-                    ],
-                    value=features_list[0],
-                    multi=True,
-                )
-            ],
-            style={"width": "20%", "display": "inline-block", "padding": "5px"},
-        ),
-        dcc.Graph(id="line_plot"),
-        html.Div(
-            html.A(
-                children="Created by James Twose",
-                href="https://services.jms.rocks",
-                style={"color": "#743de0"},
-            ),
-            style={"textAlign": "center", "color": "#743de0", "marginTop": 40, "marginBottom": 40},
-        ),
-    ]
-)
+    correlation_info = parse_correlation()
+    children = html.Div([best_info, total_info, correlation_info])
+    return children
 
 
 @app.callback(
-    Output(component_id="line_plot", component_property="figure"),
-    [
-        Input(component_id="db_choice", component_property="value"),
-        Input(component_id="feature_choice", component_property="value"),
-    ],
+    Output("output-data-activity", "children"),
+    Input("activity-string-dropdown", "value"),
 )
-def graph_update(db_choice, feature_choice):
-    plot_color_list = JmsColors.to_list()
-    if feature_choice == []:
-        fig = px.line(
-            data_frame=df,
-            x="date",
-            y=features_list[:-1],
-            markers=True,
-            color_discrete_sequence=plot_color_list,
-        )
-        fig.update_layout(
-            title=f"Fitbit data, db == {db_choice}, feature choice == {features_list}",
-            xaxis_title="Date",
-            yaxis_title="Sleep Value",
-        )
-    else:
-        fig = px.line(
-            data_frame=df,
-            x="date",
-            y=feature_choice,
-            markers=True,
-            color_discrete_sequence=plot_color_list,
-        )
+def update_time_plots_activity(features_list):
+    children = parse_time_plots(
+        data=activity_df, data_type="Activity Daily", features=features_list
+    )
+    return children
 
-        fig.update_layout(
-            title=f"Fitbit data, db == {db_choice}, feature choice == {feature_choice}",
-            xaxis_title="Date",
-            yaxis_title="Sleep Value",
-        )
-    return fig
+
+@app.callback(
+    Output("output-data-sleep", "children"),
+    Input("sleep-string-dropdown", "value"),
+)
+def update_time_plots_sleep(features_list):
+    children = parse_time_plots(data=sleep_df, data_type="Sleep Daily", features=features_list)
+    return children
+
+
+@app.callback(Output("page-content", "children"), [Input("url", "pathname")])
+def render_page_content(pathname):
+    if pathname == "/":
+        # return html.P("This is the content of the home page!")
+        output = html.Div(update_descriptives())
+        return output
+    elif pathname == "/page-1":
+        return html.Div(id="output-data-activity")
+    elif pathname == "/page-2":
+        return html.Div(id="output-data-sleep")
+    # If the user tries to reach a different page, return a 404 message
+    return html.Div(
+        [
+            html.H1("404: Not found", className="text-danger"),
+            html.Hr(),
+            html.P(f"The pathname {pathname} was not recognised..."),
+        ],
+        className="p-3 bg-light rounded-3",
+    )
 
 
 if __name__ == "__main__":
