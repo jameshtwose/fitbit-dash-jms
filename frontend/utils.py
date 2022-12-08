@@ -1,11 +1,11 @@
 import pandas as pd
-import numpy as np
 import plotly.express as px
-import plotly.graph_objects as go
 from dash import dcc, html, dash_table
 from deta import Deta
 from dotenv import load_dotenv, find_dotenv
 import os
+from pyunicorn.timeseries import RecurrencePlot
+from jmspack.utils import silence_stdout
 from jmspack.frequentist_statistics import correlation_analysis
 
 plot_color_list = [
@@ -64,6 +64,19 @@ def get_data(data_type="sleep_daily"):
     return df
 
 
+activity_df = get_data(data_type="activity_daily")
+sleep_df = get_data(data_type="sleep_daily")
+activity_list = activity_df.set_index("date").select_dtypes("number").columns.tolist()
+sleep_list = sleep_df.set_index("date").select_dtypes("number").columns.tolist()
+df = pd.merge(
+    activity_df.set_index("date")[activity_list],
+    sleep_df.set_index("date")[sleep_list],
+    left_index=True,
+    right_index=True,
+    how="inner",
+)
+
+
 def create_table(data):
     return dash_table.DataTable(
         data=data.to_dict("records"),
@@ -96,8 +109,8 @@ def create_line_plot(data, data_type, features):
     return fig
 
 
-def create_heatmap(data, title, x_title, y_title):
-    fig = px.imshow(img=data, text_auto=".2f", aspect="auto")
+def create_heatmap(data, title, x_title, y_title, annot, cmap):
+    fig = px.imshow(img=data, text_auto=annot, aspect="auto", color_continuous_scale=cmap)
     fig.update_layout(
         title=title,
         xaxis_title=x_title,
@@ -105,7 +118,7 @@ def create_heatmap(data, title, x_title, y_title):
         showlegend=False,
         width=1000,
         height=700,
-        autosize=False
+        autosize=False,
     )
     return fig
 
@@ -115,20 +128,6 @@ def parse_descriptives(data, title):
 
 
 def parse_correlation():
-    activity_df = get_data(data_type="activity_daily")
-    sleep_df = get_data(data_type="sleep_daily")
-    activity_list = activity_df.set_index("date").select_dtypes("number").columns.tolist()
-    sleep_list = sleep_df.set_index("date").select_dtypes("number").columns.tolist()
-
-    # %%
-    df = pd.merge(
-        activity_df.set_index("date")[activity_list],
-        sleep_df.set_index("date")[sleep_list],
-        left_index=True,
-        right_index=True,
-        how="inner",
-    )
-
     cor_dict = correlation_analysis(data=df, col_list=activity_list, row_list=sleep_list)
     cor_summary = parse_descriptives(
         data=cor_dict["summary"].round(3), title="Correlation between activity and sleep values"
@@ -138,9 +137,65 @@ def parse_correlation():
         title="Correlation between activity and sleep values",
         x_title="Activity Values",
         y_title="Sleep Values",
+        annot=".2f",
+        cmap=None,
     )
 
     return html.Div([cor_summary, dcc.Graph(figure=cor_heat)])
+
+
+def parse_recurrence():
+    with silence_stdout():
+        determinism_column = df[activity_list + sleep_list].apply(
+            lambda x: RecurrencePlot(
+                time_series=x.values, metric="manhattan", dim=3, tau=2, recurrence_rate=0.05
+            ).determinism(l_min=2)
+        )
+        laminarity_column = df[activity_list + sleep_list].apply(
+            lambda x: RecurrencePlot(
+                time_series=x.values, metric="manhattan", dim=3, tau=2, recurrence_rate=0.05
+            ).laminarity(v_min=2)
+        )
+        diag_entropy_column = df[activity_list + sleep_list].apply(
+            lambda x: RecurrencePlot(
+                time_series=x.values, metric="manhattan", dim=3, tau=2, recurrence_rate=0.05
+            ).diag_entropy(l_min=2)
+        )
+    rp_df = (
+        pd.concat([determinism_column, laminarity_column, diag_entropy_column], axis=1)
+        .reset_index()
+        .rename(
+            columns={"index": "feature", 0: "determinism", 1: "laminarity", 2: "diagonal_entropy"}
+        )
+        .sort_values(by=["determinism", "laminarity"], ascending=False)
+    )
+
+    rec_summary = parse_descriptives(
+        data=rp_df.round(3), title="Recurrence Quantification Analysis summary statistics"
+    )
+
+    best_feature = rp_df["feature"].head(1).values[0]
+
+    best_rm = RecurrencePlot(
+        time_series=df[best_feature].values, metric="manhattan", dim=3, tau=2, recurrence_rate=0.05
+    ).recurrence_matrix()
+
+    # rotate the matrix 90 degrees so it starts at day 0 in the bottom left corner
+    new_matrix = [
+        [best_rm[j][i] for j in range(len(best_rm))] for i in range(len(best_rm[0]) - 1, -1, -1)
+    ]
+    rm_df = pd.DataFrame(new_matrix, index=df.index[4:], columns=df.index[4:])
+    rec_heat = create_heatmap(
+        data=rm_df,
+        title=f"Recurrence Plot feature == {best_feature}",
+        x_title="Date",
+        y_title="",
+        annot=False,
+        cmap=["white", "rgba(91, 22, 106, 1)"],
+    )
+    rec_heat.update_yaxes(showticklabels=False)
+
+    return html.Div([rec_summary, dcc.Graph(figure=rec_heat)])
 
 
 def parse_time_plots(data, data_type, features):

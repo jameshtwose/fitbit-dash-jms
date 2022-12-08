@@ -3,7 +3,13 @@ from dash import Dash, dcc, html, Input, Output, State
 import dash_bootstrap_components as dbc
 from sidebar import sidebar, content, activity_df, sleep_df
 
-from utils import parse_time_plots, parse_descriptives, get_data, parse_correlation
+from utils import (
+    parse_time_plots,
+    parse_descriptives,
+    get_data,
+    parse_correlation,
+    parse_recurrence,
+)
 import pandas as pd
 
 app.layout = html.Div([dcc.Location(id="url"), sidebar, content])
@@ -15,12 +21,10 @@ def update_descriptives():
         data=activity_best_df, title="The highest activity data and the dates they occurred"
     )
     activity_total_df = get_data(data_type="activity_total")
-    total_info = parse_descriptives(
-        data=activity_total_df, title="The total activity data"
-    )
-
+    total_info = parse_descriptives(data=activity_total_df, title="The total activity data")
     correlation_info = parse_correlation()
-    children = html.Div([best_info, total_info, correlation_info])
+    recurrence_info = parse_recurrence()
+    children = html.Div([best_info, total_info, correlation_info, recurrence_info])
     return children
 
 
