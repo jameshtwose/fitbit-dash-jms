@@ -1,0 +1,44 @@
+body {
+    margin-left: 20px;
+    padding: 20px;
+    /* margin-left: -800px; */
+    /* margin-right: 800px; */
+    font-family: 'Raleway', sans-serif;
+    /* background: #f9f9f9; */
+    --link_color: #ac863e;
+    --header_color: #5f4a89;
+    --overview_color: #241444b0;
+    --bullet_line_color: #242424;
+}
+
+.nav-pills .nav-link.active {
+    color: #fff;
+    background-color: var(--header_color);
+}
+
+.nav-pills .nav-link {
+    color: var(--header_color);
+}
+
+/* a {
+    color: var(--link_color);
+    text-decoration: none;
+} */
+
+h1, h2 {
+    color: var(--header_color);
+}
+
+tr:first-child {
+    color: rgb(237, 237, 237);
+    font-size: 15px;
+    /* font-weight: bold; */
+}
+
+#general {
+    background-color: rgba(248, 249, 250, 0.34);
+    padding: 20px;
+    color: var(--header_color);
+    margin-top: 50px;
+    margin-bottom: 50px;
+}

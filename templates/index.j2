@@ -1,0 +1,31 @@
+<!doctype html>
+<html class="no-js" lang="">
+
+<head>
+  <title>Fitbit Oauth 2.0 Login for python Flask application</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+
+<body>
+  <h3>Example of Fitbit Login in Python Flask Application</h3>
+  {% if not fitbit_data %}
+    <p style="color:#ac863e;">You are not logged in, Click on the below link to sign in with fitbit.</p>
+    <a href="/login" class="fitbit-btn">
+      <div class="fitbit-icon-wrapper">
+        <img class="fitbit-icon" src="https://logos-world.net/wp-content/uploads/2021/02/Fitbit-Emblem.png"/>
+      </div>
+      <p class="btn-text"><b>Sign in with fitbit</b></p>
+    </a>
+  {% else %}
+    <p>Hi {{ fitbit_data.fullName }}, [<strong>{{ fitbit_data.dateOfBirth }}</strong>]. You have logged in successfully from your Fitbit Account. Check your below details.</p>
+  {% if fitbit_data is not none %}
+    <div class="detail">
+      <p style="font-size: 15px; padding-bottom: 10px;">User info fetched from <strong>{{ fetch_url }}</strong></p>
+      {% for key, value in fitbit_data.items() %}
+        <p><strong>{{ key }}</strong>: {{ value }}</p>
+      {% endfor %}
+    </div>
+  {% endif %}
+  {% endif %}
+
+</html>
