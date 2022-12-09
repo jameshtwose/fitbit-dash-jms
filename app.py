@@ -40,40 +40,48 @@ app.register_blueprint(blueprint, url_prefix="/login")
 def index():
     fitbit_data = None
     chosen_date = date.today() - timedelta(days=1)
-    date_range = pd.date_range(start=chosen_date - timedelta(days=30),
-    end=chosen_date).date
+    lookback_period = 60  # days
+    date_range = pd.date_range(
+        start=chosen_date - timedelta(days=lookback_period), end=chosen_date
+    ).date
     if fitbit.authorized:
         user_info_endpoint = "1/user/-/profile.json"
         fitbit_data = fitbit.get(user_info_endpoint).json()["user"]
-        
+
         # GENERAL ACTIVITY
-        # user_info_endpoint = "1/user/-/activities.json"
-        # general_activity_data = fitbit.get(user_info_endpoint).json()
-        # pd.DataFrame(general_activity_data["best"]).to_csv("data/activity_best.csv")
-        # pd.DataFrame(general_activity_data["lifetime"]).to_csv("data/activity_lifetime.csv")
+        user_info_endpoint = "1/user/-/activities.json"
+        general_activity_data = fitbit.get(user_info_endpoint).json()
+        pd.DataFrame(general_activity_data["best"]).to_csv("backend/data/activity_best.csv")
+        pd.DataFrame(general_activity_data["lifetime"]).to_csv(
+            "backend/data/activity_lifetime.csv"
+        )
 
         # DAILY ACTIVITY
-        # activities_df = pd.DataFrame()
-        # for chosen_date in date_range:
-        #     print(str(chosen_date))
-        #     user_info_endpoint = f"1/user/-/activities/date/{str(chosen_date)}.json"
-        #     fitbit_data = fitbit.get(user_info_endpoint).json()["summary"]
-        #     current_df = (pd.DataFrame(fitbit_data)
-        #     .head(1)
-        #     .assign(**{"date": str(chosen_date)}))
-        #     activities_df = pd.concat([activities_df, current_df])
-        # activities_df.to_csv(f"data/activity_{str(chosen_date - timedelta(days=30))}_{str(chosen_date)}.csv")
+        activities_df = pd.DataFrame()
+        for chosen_date in date_range:
+            print(str(chosen_date))
+            user_info_endpoint = f"1/user/-/activities/date/{str(chosen_date)}.json"
+            fitbit_data = fitbit.get(user_info_endpoint).json()["summary"]
+            current_df = pd.DataFrame(fitbit_data).head(1).assign(**{"date": str(chosen_date)})
+            activities_df = pd.concat([activities_df, current_df])
+        activities_df.to_csv(
+            f"""backend/data/activity_{str(chosen_date - timedelta(days=lookback_period))}
+            _{str(chosen_date)}.csv"""
+        )
 
         # DAILY SLEEP
-        # sleep_df = pd.DataFrame()
-        # for chosen_date in date_range:
-        #     print(str(chosen_date))
-        #     user_info_endpoint = f"1.2/user/-/sleep/list.json?afterDate={str(chosen_date)}&sort=asc&offset=0&limit=1"
-        #     fitbit_data = fitbit.get(user_info_endpoint).json()["sleep"][0]
-        #     current_df = pd.DataFrame(fitbit_data)
-        #     sleep_df = pd.concat([sleep_df, current_df])
-        # sleep_df.to_csv(f"data/sleep_{str(chosen_date - timedelta(days=30))}_{str(chosen_date)}.csv")
-
+        sleep_df = pd.DataFrame()
+        for chosen_date in date_range:
+            print(str(chosen_date))
+            user_info_endpoint = f"""1.2/user/-/sleep/list.json?afterDate={str(chosen_date)}
+            &sort=asc&offset=0&limit=1"""
+            fitbit_data = fitbit.get(user_info_endpoint).json()["sleep"][0]
+            current_df = pd.DataFrame(fitbit_data)
+            sleep_df = pd.concat([sleep_df, current_df])
+        sleep_df.to_csv(
+            f"""backend/data/sleep_{str(chosen_date - timedelta(days=lookback_period))}
+            _{str(chosen_date)}.csv"""
+        )
 
     return render_template(
         "index.j2", fitbit_data=fitbit_data, fetch_url=fitbit.base_url + user_info_endpoint
