@@ -1,4 +1,6 @@
 import os
+from glob import glob
+from deta import Deta
 from dotenv import load_dotenv
 from flask import Flask, render_template, redirect, url_for
 from flask_dance.contrib.fitbit import make_fitbit_blueprint, fitbit
@@ -14,6 +16,11 @@ app.secret_key = os.getenv("secret_key")
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 os.environ["OAUTHLIB_RELAX_TOKEN_SCOPE"] = "1"
 
+# remove all of the local versions of the latest csvs
+for file in glob("backend/data/*"):
+    os.remove(file)
+
+
 FITBIT_SCOPES = [
     "activity",
     # "heartrate",
@@ -26,6 +33,14 @@ FITBIT_SCOPES = [
     # "weight",
 ]
 
+# read in the latest data saved in the Deta NOSQL
+# mainly to get the necessary date range
+deta = Deta(os.environ["health_deta_project_key"])
+activity_daily_db = deta.Base("fitbit_activity_daily")
+activity_daily_df = pd.DataFrame(activity_daily_db.fetch().items).assign(
+    **{"date": lambda d: pd.to_datetime(d["date"])}
+)
+
 blueprint = make_fitbit_blueprint(
     client_id=client_id,
     client_secret=client_secret,
@@ -35,15 +50,15 @@ blueprint = make_fitbit_blueprint(
 )
 app.register_blueprint(blueprint, url_prefix="/login")
 
-
 @app.route("/")
 def index():
     fitbit_data = None
-    chosen_date = date.today() - timedelta(days=1)
-    lookback_period = 60  # days
-    date_range = pd.date_range(
-        start=chosen_date - timedelta(days=lookback_period), end=chosen_date
-    ).date
+    start_date = activity_daily_df["date"].dt.date.max()
+    end_date = date.today() - timedelta(days=1)
+    # lookback_period = 60  # days
+    user_info_endpoint = ""
+
+    date_range = pd.date_range(start=start_date, end=end_date).date
     if fitbit.authorized:
         user_info_endpoint = "1/user/-/profile.json"
         fitbit_data = fitbit.get(user_info_endpoint).json()["user"]
@@ -65,8 +80,7 @@ def index():
             current_df = pd.DataFrame(fitbit_data).head(1).assign(**{"date": str(chosen_date)})
             activities_df = pd.concat([activities_df, current_df])
         activities_df.to_csv(
-            f"""backend/data/activity_{str(chosen_date - timedelta(days=lookback_period))}
-            _{str(chosen_date)}.csv"""
+            f"""backend/data/activity_{str(start_date)}_{str(end_date)}.csv"""
         )
 
         # DAILY SLEEP
@@ -79,8 +93,7 @@ def index():
             current_df = pd.DataFrame(fitbit_data)
             sleep_df = pd.concat([sleep_df, current_df])
         sleep_df.to_csv(
-            f"""backend/data/sleep_{str(chosen_date - timedelta(days=lookback_period))}
-            _{str(chosen_date)}.csv"""
+            f"""backend/data/sleep_{str(start_date)}_{str(end_date)}.csv"""
         )
 
     return render_template(

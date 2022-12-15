@@ -6,7 +6,25 @@ from pyunicorn.timeseries import RecurrencePlot
 from jmspack.utils import silence_stdout
 
 # %%
-df = sns.load_dataset("iris")
+import os
+current_wd = os.getcwd()
+os.chdir(current_wd.split("sandbox")[0])
+from frontend.utils import get_data
+os.chdir(current_wd)
+
+# %%
+# df = sns.load_dataset("iris")
+activity_df = get_data(data_type="activity_daily")
+sleep_df = get_data(data_type="sleep_daily")
+activity_list = activity_df.set_index("date").select_dtypes("number").columns.tolist()
+sleep_list = sleep_df.set_index("date").select_dtypes("number").columns.tolist()
+df = pd.merge(
+    activity_df.set_index("date")[activity_list],
+    sleep_df.set_index("date")[sleep_list],
+    left_index=True,
+    right_index=True,
+    how="inner",
+)
 
 # %%
 with silence_stdout():
@@ -44,10 +62,16 @@ best_rm = RecurrencePlot(
 new_matrix = [
     [best_rm[j][i] for j in range(len(best_rm))] for i in range(len(best_rm[0]) - 1, -1, -1)
 ]
-rm_df = pd.DataFrame(new_matrix, index=df.index[4:], columns=df.index[4:])
+rm_df = pd.DataFrame(new_matrix, index=df.index.sort_values(ascending=False)[:-4], columns=df.index[4:])
 # %%
 _ = sns.heatmap(rm_df)
 # %%
-fig = px.imshow(rm_df, color_continuous_scale=["white", "rgba(91, 22, 106, 1)"])
-fig.update_yaxes(showticklabels=False)
+fig = px.imshow(rm_df, 
+color_continuous_scale=["white", "rgba(91, 22, 106, 1)"],
+origin="lower")
+# fig.update_yaxes(showticklabels=False)
 fig.show()
+
+# %%
+
+# %%

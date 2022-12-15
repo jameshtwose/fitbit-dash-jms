@@ -109,8 +109,8 @@ def create_line_plot(data, data_type, features):
     return fig
 
 
-def create_heatmap(data, title, x_title, y_title, annot, cmap):
-    fig = px.imshow(img=data, text_auto=annot, aspect="auto", color_continuous_scale=cmap)
+def create_heatmap(data, title, x_title, y_title, annot, cmap, origin):
+    fig = px.imshow(img=data, text_auto=annot, origin=origin, aspect="auto", color_continuous_scale=cmap)
     fig.update_layout(
         title=title,
         xaxis_title=x_title,
@@ -139,6 +139,7 @@ def parse_correlation():
         y_title="Sleep Values",
         annot=".2f",
         cmap=None,
+        origin="upper"
     )
 
     return html.Div([cor_summary, dcc.Graph(figure=cor_heat)])
@@ -184,16 +185,19 @@ def parse_recurrence():
     new_matrix = [
         [best_rm[j][i] for j in range(len(best_rm))] for i in range(len(best_rm[0]) - 1, -1, -1)
     ]
-    rm_df = pd.DataFrame(new_matrix, index=df.index[4:], columns=df.index[4:])
+    rm_df = pd.DataFrame(
+        new_matrix, index=df.index.sort_values(ascending=False)[:-4], columns=df.index[4:]
+    )
     rec_heat = create_heatmap(
         data=rm_df,
         title=f"Recurrence Plot feature == {best_feature}",
         x_title="Date",
         y_title="",
         annot=False,
+        origin="lower",
         cmap=["white", "rgba(91, 22, 106, 1)"],
     )
-    rec_heat.update_yaxes(showticklabels=False)
+    # rec_heat.update_yaxes(showticklabels=False)
 
     return html.Div([rec_summary, dcc.Graph(figure=rec_heat)])
 

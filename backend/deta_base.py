@@ -71,7 +71,8 @@ db_df_dict = {
 
 # %%
 for db in db_df_dict:
-    delete_values(db=db)
+    # delete_values(db=db)
+    print(db_df_dict[db].head(2))
     insert_values(db=db, data=db_df_dict[db])
 
 # %%
