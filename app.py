@@ -16,9 +16,9 @@ app.secret_key = os.getenv("secret_key")
 os.environ["OAUTHLIB_INSECURE_TRANSPORT"] = "1"
 os.environ["OAUTHLIB_RELAX_TOKEN_SCOPE"] = "1"
 
-# remove all of the local versions of the latest csvs
-for file in glob("backend/data/*"):
-    os.remove(file)
+# # remove all of the local versions of the latest csvs
+# for file in glob("backend/data/*"):
+#     os.remove(file)
 
 
 FITBIT_SCOPES = [
@@ -53,7 +53,8 @@ app.register_blueprint(blueprint, url_prefix="/login")
 @app.route("/")
 def index():
     fitbit_data = None
-    start_date = activity_daily_df["date"].dt.date.max()
+    # start_date = activity_daily_df["date"].dt.date.max()
+    start_date = date.today() - timedelta(days=2)
     end_date = date.today() - timedelta(days=1)
     # lookback_period = 60  # days
     user_info_endpoint = ""
